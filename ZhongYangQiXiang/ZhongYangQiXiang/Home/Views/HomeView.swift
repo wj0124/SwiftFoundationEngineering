@@ -14,6 +14,7 @@
 import SwiftUI
 
 struct HomeView: View {
+    
     var body: some View {
         
         VStack {
@@ -26,6 +27,7 @@ struct HomeView: View {
                     .frame(width: UIScreen.main.bounds.width)
                 
                 // 自定义导航条
+                
                 HomeNav()
                     .frame(width: UIScreen.main.bounds.width, height: 44)
                     .padding(.top, 44)   // 顶部内边距 20
@@ -34,6 +36,7 @@ struct HomeView: View {
             // 如果希望直接顶到屏幕最上方（包括刘海 / 灵动岛），可以忽略顶部安全区
             .ignoresSafeArea(edges: .top)
             Spacer()
+            
         }
         
         
@@ -53,31 +56,63 @@ struct HomeNav: View {
                     print("左侧按钮被点击")
                 }) {
                     Image(.homeLogo)
-                        //.resizable()
                         .aspectRatio(contentMode: .fit)
-                        //.frame(width: 24, height: 24)
-                        //.background(.red)
-//                        // 给按钮一个固定区域，让图片居中
-//                        .frame(width: 44, height: 44)
-//                        .background(.yellow)
                 }
+                .frame(width: 40, height: 40).background(.yellow)
                 Spacer()
                 Button(action: {
                     print("右侧按钮被点击")
+                    pushTestView()
                 }) {
                     Image(.navMy)
-                        //.resizable()
                         .aspectRatio(contentMode: .fit)
-//                        .frame(width: 24, height: 24)
-//                        // 同样设置固定区域
-//                        .frame(width: 44, height: 44)
                 }
             }
             .padding(.horizontal, 16)
         }
     }
+    
+    /// 查找当前所在的 UINavigationController，并 push TestView
+    private func pushTestView() {
+        if let nav = findNavigationController() {
+            let testVC = UIHostingController(rootView: TestView())
+            testVC.hidesBottomBarWhenPushed = true
+            nav.pushViewController(testVC, animated: true)
+        }
+    }
+    
+    /// 递归查找当前窗口的 UINavigationController
+    private func findNavigationController() -> UINavigationController? {
+        guard let window = UIApplication.shared.windows.first(where: { $0.isKeyWindow }),
+              let rootVC = window.rootViewController else { return nil }
+        return traverseForNavigationController(from: rootVC)
+    }
+    
+    private func traverseForNavigationController(from vc: UIViewController) -> UINavigationController? {
+        if let nav = vc as? UINavigationController {
+            return nav
+        } else if let tab = vc as? UITabBarController,
+                  let selected = tab.selectedViewController {
+            return traverseForNavigationController(from: selected)
+        } else {
+            for child in vc.children {
+                if let nav = traverseForNavigationController(from: child) {
+                    return nav
+                }
+            }
+        }
+        return nil
+    }
 }
 
+struct TestView: View {
+    var body: some View {
+        Text("这是测试页面")
+            .font(.title)
+            .padding()
+        
+    }
+}
 
 #Preview {
     HomeNav()

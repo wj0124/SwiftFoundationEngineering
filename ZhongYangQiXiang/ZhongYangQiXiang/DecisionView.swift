@@ -8,19 +8,22 @@
 import SwiftUICore
 import SwiftUI
 
+
 struct DecisionView: View {
     @StateObject private var viewModel = HomeViewModel()
     
     var body: some View {
         VStack {
-            ScrollView {
-                
-                let a = JSON(viewModel.responseData)
-                
-                
-                Text("\(a)")
+            if viewModel.isLoading {
+                ProgressView("加载中...")
                     .padding()
-                    .font(.system(.body, design: .monospaced))
+            } else {
+                ScrollView {
+                    // 直接将 responseData 转换为 JSON 格式并显示
+                    Text("\(JSON(viewModel.responseData))")
+                        .padding()
+                        .font(.system(.body, design: .monospaced))
+                }
             }
         }
         .onAppear {

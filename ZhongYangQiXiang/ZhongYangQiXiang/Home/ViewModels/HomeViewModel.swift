@@ -91,40 +91,6 @@ final class NetworkLoggerPlugin: PluginType {
 
 
 
-
-// MARK: - 模型定义
-
-/// 顶层响应模型，对应 JSON 返回数据
-struct HomeResponse: Codable {
-    let msg: String
-    let videos: [Video]   // 使用 videos 表示数据列表
-    let code: Int
-    let total: Int
-    
-    enum CodingKeys: String, CodingKey {
-        case msg, code, total
-        case videos = "data"  // JSON 的 key "data" 映射为 videos
-    }
-}
-
-/// 视频模型，采用 JSON 数据中的字段
-struct Video: Codable, Identifiable {
-    var id: String { videoId }  // 使用 videoId 作为唯一标识
-    let desc: String
-    let createTime: String
-    let videoId: String
-    let author: String
-    let favorites: Int
-    let isFavorite: Bool
-    let type: String?
-    let likes: Int
-    let isLike: Bool
-    let previewTitle: String?
-    let url: String
-}
-
-
-
 // MARK: - HomeViewModel
 
 class HomeViewModel: ObservableObject {
@@ -150,19 +116,33 @@ class HomeViewModel: ObservableObject {
     // 存放请求到的视频数组
     @Published var videos: [Video] = []
     @Published var responseData: Data = Data()
-
+    
     // 存放可能的错误信息
     @Published var errorMessage: String?
     
+    // 新增加载状态属性
+    @Published var isLoading: Bool = false
+    
     /// 从网络获取视频数据
     func fetchVideos() {
+        // 请求开始前，将加载状态设置为 true
+        DispatchQueue.main.async {
+            self.isLoading = true
+        }
+        
         provider.request(.getPosts) { [weak self] result in
             guard let self = self else { return }
+            // 使用 defer 确保在请求结束后将加载状态设置为 false
+            defer {
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                }
+            }
             
             switch result {
             case .success(let response):
                 do {
-                    responseData = response.data
+                    self.responseData = response.data
                     // 解析顶层响应模型，获取 videos 数组
                     let homeResponse = try JSONDecoder().decode(HomeResponse.self, from: response.data)
                     DispatchQueue.main.async {
